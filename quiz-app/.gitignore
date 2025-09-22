@@ -1,10 +1,48 @@
-
-###> symfony/framework-bundle ###
-/.env.local
-/.env.local.php
-/.env.*.local
-/config/secrets/prod/prod.decrypt.private.php
-/public/bundles/
-/var/
+# Composer dependencies
 /vendor/
-###< symfony/framework-bundle ###
+
+# Symfony cache & logs
+/var/cache/
+/var/log/
+
+# Environment variables (keep only .env.dist in repo)
+.env
+.env.local
+.env.*.local
+
+# PHPUnit
+/phpunit.xml
+/phpunit.xml.dist
+/phpunit.result.cache
+
+# IDE / Editor settings
+/.idea/
+/.vscode/
+/nbproject/
+/*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node / Frontend (if you use Webpack Encore, npm or yarn)
+/node_modules/
+/public/build/
+/yarn.lock
+package-lock.json
+
+# Coverage reports
+/coverage/
+/.clover/
+
+# Docker
+/.docker/
+/docker-compose.override.yml
+
+# Symfony CLI local server
+/.symfony/
+
+# Temporary files
+*.cache
+*.log
