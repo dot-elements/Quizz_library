@@ -1,5 +1,5 @@
 # Composer dependencies
-/vendor/
+/quiz-app/vendor/
 
 # Symfony cache & logs
 /var/cache/
