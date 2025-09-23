@@ -42,4 +42,18 @@ class ClientQuiz
 
         return $this;
     }
+
+    public function setClient(?Client $client): static
+    {
+     $this->client = $client;
+
+     return $this;
+    }
+
+    public function setQuizVersion(?QuizVersion $quizVersion): static
+    {
+        $this->quizVersion = $quizVersion;
+
+        return $this;
+    }
 }

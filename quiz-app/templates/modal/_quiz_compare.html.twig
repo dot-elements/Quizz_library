@@ -1,0 +1,50 @@
+<div class="modal fade" id="compareModal" tabindex="-1" aria-labelledby="compareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="compareModalLabel">Compare Versions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Current Version ({{ latestVersion.version ?? 'N/A' }})</h4>
+                        {% if latestVersion %}
+
+                            <ul id="current-questions">
+                                {% for question in currentQuestions %}
+                                    <li data-question-id="{{ question.id }}">
+                                        <strong>{{ question.text }}</strong>
+                                        {% if question.options %}
+                                            <ul>
+                                                {% for key, answer in question.options %}
+                                                    <li>{{ key }}: {{ answer }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                        <div class="text-muted small">
+                                            Category: {{ question.category ? question.category.name : 'Uncategorized' }}
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p><em>No previous version exists.</em></p>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <h4>New Draft (Preview)</h4>
+                        <ul id="draft-questions">
+                            {# JS fills dynamically #}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

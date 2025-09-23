@@ -1,0 +1,215 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container py-4">
+
+        {# --- Breadcrumbs --- #}
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ path('app_quiz_index') }}">
+                        <i class="bi bi-journal-text"></i> Quizzes
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ path('app_quiz_show', {id: quiz.id}) }}">
+                        <i class="bi bi-file-earmark-text"></i> {{ quiz.title }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="bi bi-pencil-square"></i> New Version
+                </li>
+            </ol>
+        </nav>
+
+        <h1 class="mb-4 text-primary">
+            <i class="bi bi-pencil-square"></i> Edit Quiz: <span class="fw-bold">"{{ quiz.title }}"</span>
+        </h1>
+
+        <p class="text-muted">
+            You are creating a <strong>new version</strong> of this quiz.
+            Use the tabs below to <i class="bi bi-check2-square"></i> select questions,
+            then <i class="bi bi-eye"></i> compare your draft with the current version before <i class="bi bi-save"></i> saving.
+        </p>
+
+        {{ form_start(form) }}
+
+        {# ---------------------------------- #}
+        {# Pre-render all children once       #}
+        {# ---------------------------------- #}
+        {% set renderedQuestions = [] %}
+        {% for child in form.questions %}
+            {% set question = questions|filter(q => q.id == child.vars.value)|first %}
+            {% set categoryName = question and question.category ? question.category.name : 'Uncategorized' %}
+            {% set text = question ? question.text : child.vars.label %}
+
+            {% set renderedQuestions = renderedQuestions|merge([{
+                'html': '<div class="form-check mb-2">' ~ form_widget(child, {'attr': {'class': 'form-check-input'}}) ~
+                form_label(child, null, {'label_attr': {'class': 'form-check-label'}}) ~ '</div>',
+                'text': text,
+                'category': categoryName,
+                'checked': child.vars.checked|default(false)
+            }]) %}
+        {% endfor %}
+
+        {# ---------------------------------- #}
+        {# Question selection tabs            #}
+        {# ---------------------------------- #}
+        <ul class="nav nav-tabs mt-4" id="questionTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="by-category-tab" data-bs-toggle="tab" href="#by-category" role="tab">
+                    <i class="bi bi-folder2"></i> Browse by Category
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="by-name-tab" data-bs-toggle="tab" href="#by-name" role="tab">
+                    <i class="bi bi-sort-alpha-down"></i> Browse by Name
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 p-3 bg-light rounded-bottom">
+            {# --- BY CATEGORY TAB --- #}
+            <div class="tab-pane fade show active" id="by-category" role="tabpanel">
+                {% set categories = {} %}
+                {% for q in renderedQuestions %}
+                    {% if categories[q.category] is not defined %}
+                        {% set categories = categories|merge({ (q.category): [] }) %}
+                    {% endif %}
+                    {% set categories = categories|merge({ (q.category): categories[q.category]|merge([q]) }) %}
+                {% endfor %}
+
+                <div class="accordion" id="categoryAccordion">
+                    {% for cat, items in categories %}
+                        {% set collapseId = 'collapse-' ~ loop.index %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading-{{ loop.index }}">
+                                <button class="accordion-button collapsed" type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#{{ collapseId }}"
+                                        aria-expanded="false"
+                                        aria-controls="{{ collapseId }}">
+                                    <i class="bi bi-folder"></i> {{ cat }}
+                                </button>
+                            </h2>
+                            <div id="{{ collapseId }}" class="accordion-collapse collapse"
+                                 aria-labelledby="heading-{{ loop.index }}"
+                                 data-bs-parent="#categoryAccordion">
+                                <div class="accordion-body">
+                                    {% for q in items %}
+                                        {{ q.html|raw }}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# --- BY NAME TAB --- #}
+            <div class="tab-pane fade" id="by-name" role="tabpanel">
+                {% set sorted = renderedQuestions|sort((a, b) =>
+                    (b.checked <=> a.checked) ?: (a.text <=> b.text)
+                    ) %}
+                {% for q in sorted %}
+                    {{ q.html|raw }}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+
+            <a href="{{ path('app_quiz_show', {id: quiz.id}) }}" class="btn btn-outline-dark">
+                <i class="bi bi-arrow-left"></i> Back to Quiz Overview
+            </a>
+
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#compareModal">
+                    <i class="bi bi-eye"></i> Compare with Current Version
+                </button>
+                <button class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save New Version
+                </button>
+            </div>
+        </div>
+
+        {{ form_end(form) }}
+
+    </div>
+
+    {% include 'modal/_quiz_compare.html.twig' %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/compare.js') }}"></script>
+    <script>
+        window.quizQuestions = {{ questions|map(q => {
+            id: q.id,
+            text: q.text,
+            options: q.options,
+            category: q.category ? q.category.name : 'Uncategorized',
+            tags: q.tags|map(t => t.name)
+        })|json_encode|raw }};
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const draftList = document.getElementById("draft-questions");
+            const checkboxes = document.querySelectorAll('input[type="checkbox"][id^="quiz_version_questions_"]');
+
+            function updateDraftPreview() {
+                if (!draftList) return;
+
+                draftList.innerHTML = "";
+
+                const selected = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        const q = window.quizQuestions.find(item => item.id == cb.value);
+                        if (q) selected.push(q);
+                    }
+                });
+
+                // Sort alphabetically
+                selected.sort((a, b) => a.text.localeCompare(b.text));
+
+                selected.forEach(q => {
+                    const li = document.createElement("li");
+                    li.dataset.questionId = q.id;
+
+                    let html = `<strong>${q.text}</strong>`;
+                    if (q.options && Object.keys(q.options).length > 0) {
+                        html += "<ul>";
+                        for (const [key, val] of Object.entries(q.options)) {
+                            html += `<li>${key}: ${val}</li>`;
+                        }
+                        html += "</ul>";
+                    } else {
+                        html += "<em>No options</em>";
+                    }
+
+                    html += `<div class="text-muted small">Category: ${q.category || "Uncategorized"}</div>`;
+                    if (q.tags && q.tags.length > 0) {
+                        html += `<div class="text-muted small">Tags: ${q.tags.join(", ")}</div>`;
+                    }
+
+                    li.innerHTML = html;
+                    draftList.appendChild(li);
+                });
+            }
+
+            // --- Sync duplicate checkboxes ---
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", () => {
+                    document.querySelectorAll(`input[type="checkbox"][value="${cb.value}"]`).forEach(sibling => {
+                        if (sibling !== cb) sibling.checked = cb.checked;
+                    });
+                    updateDraftPreview();
+                });
+            });
+
+            // Initial preview on page load
+            updateDraftPreview();
+        });
+    </script>
+{% endblock %}

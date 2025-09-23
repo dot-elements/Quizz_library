@@ -26,7 +26,8 @@ class QuizVersion
     #[ORM\JoinColumn(nullable: false)]
     private ?Quiz $quiz = null;
 
-    #[ORM\OneToMany(targetEntity: Question::class, mappedBy: 'quizVersion', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\ManyToMany(targetEntity: Question::class, inversedBy: 'quizVersions')]
+    #[ORM\JoinTable(name: 'quiz_version_question')]
     private Collection $questions;
 
     #[ORM\OneToMany(targetEntity: ClientQuiz::class, mappedBy: 'quizVersion', cascade: ['persist'], orphanRemoval: true)]
@@ -37,6 +38,30 @@ class QuizVersion
         $this->questions = new ArrayCollection();
         $this->clientQuizzes = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+    }
+
+    public function getQuiz(): ?Quiz
+    {
+        return $this->quiz;
+    }
+    public function getQuestions(): ?Collection
+    {
+        return $this->questions;
+    }
+
+    public function setQuestions(Collection $questions): static
+    {
+        $this->questions = $questions;
+
+        return $this;
+    }
+
+    public function addQuestion(Question $question): static
+    {
+        if (!$this->questions->contains($question)) {
+            $this->questions->add($question);
+        }
+        return $this;
     }
 
     public function getId(): ?int
@@ -52,6 +77,13 @@ class QuizVersion
     public function setVersion(string $version): static
     {
         $this->version = $version;
+
+        return $this;
+    }
+
+    public function setQuiz( Quiz $quiz ): static
+    {
+        $this->quiz = $quiz;
 
         return $this;
     }

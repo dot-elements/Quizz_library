@@ -47,6 +47,11 @@ class Quiz
         $this->versions = new ArrayCollection();
     }
 
+    public function getVersions(): ?Collection
+    {
+        return $this->versions;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
